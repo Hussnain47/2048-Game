@@ -9,12 +9,12 @@ WIN_HEIGHT = 500
 pygame.init()
 pygame.font.init()
 myfont = pygame.font.SysFont('Helvetica Neue',70)
-
+#Making the window
 win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
 color = (187, 173, 160)
 win.fill(color)
 pygame.display.set_caption("2048")
-
+#Setting colors of all the numbers
 COLOR2 = (238, 228, 218)
 COLOR4 = (238,225,201)
 COLOR8 = (243,178,122)
@@ -23,7 +23,9 @@ COLOR32 = (247,124,95)
 COLOR64 = (247,95,59)
 COLOR128 = (237,208,115)
 COLOR256 = (237,204,98)
-
+COLOR512 = (252, 197, 20)
+COLOR1024 = (255, 195, 0)
+COLOR2048 = (255, 230, 0)
 N = 4
 
 
@@ -32,7 +34,7 @@ class Grid:
     ANIMATION_TIME = 5
 
     def __init__(self):
-
+        #Basic Grid attributes
         self.grid = np.zeros((N, N), dtype=int)
         self.width = 150
         self.height = 150
@@ -44,6 +46,9 @@ class Grid:
         return str(self.grid)
 
     def new_number(self, k=1):
+        """
+        Creating new Number on the Grid.
+        """
         freeposs = list(zip(*np.where(self.grid == 0)))   #Position of the empty spaces
         for pos in random.sample(freeposs, k):
             if random.random() < .1:
@@ -53,6 +58,9 @@ class Grid:
 
     @staticmethod
     def move_sumnumber(grid):
+        """
+        Adding the number on each move
+        """
         grid_n = grid[grid != 0]
         grid_sum = []
         skip = False
@@ -71,6 +79,9 @@ class Grid:
         return np.array(grid_sum)
 
     def move_number(self, move):
+        """
+        All 4 possible moves performed
+        """
         if move == 'l':
             for i in range(N):
                 temp = self.grid[i, :]
@@ -121,6 +132,9 @@ class Grid:
                 self.grid[:, i] = new_temp
 
     def isfilled(self):
+        """
+        Game Over case
+        """
         old_grid = self.grid.copy()
         
         for move in 'lrdu':
@@ -130,7 +144,10 @@ class Grid:
                 return False
         return True    
 
-    def play(self):
+    def CLI_play(self):
+        """
+        To play in Command Line
+        """
         self.new_number(k=2)
         while True:
 
@@ -156,6 +173,9 @@ class Grid:
             self.new_number()
 
     def createRect(self):
+        """
+        Creating the rectangles of each member of Grid
+        """
         x = 25
         y = 25
         rect = np.zeros((4,4),dtype=pygame.Rect)
@@ -164,7 +184,7 @@ class Grid:
         rectgap = 20
         
         text = np.zeros((4,4),dtype=pygame.Surface)
-        print(self.grid)
+        
         for i in range(4):
             x = 15
             for j in range(4):
@@ -177,6 +197,9 @@ class Grid:
         return rect,text
 
     def draw(self):
+        """
+        Drawing the Grid
+        """
         rect,text = self.createRect()
         win.fill(color)
 
@@ -200,11 +223,21 @@ class Grid:
                         pygame.draw.rect(win, COLOR128, r)
                     elif(self.grid[i][j] == 256):
                         pygame.draw.rect(win, COLOR256, r)
-
+                    elif(self.grid[i][j] == 512):
+                        pygame.draw.rect(win, COLOR512, r)
+                    elif(self.grid[i][j] == 1024):
+                        pygame.draw.rect(win, COLOR1024, r)
+                    elif(self.grid[i][j] == 2048):
+                        pygame.draw.rect(win, COLOR2048, r)            
+                    else:
+                        pygame.draw.rect(win, COLOR2048, r)  
                     text_rect = text[i][j].get_rect(center=((r.left + r.width / 2, r.top + r.height / 2)))
                     win.blit(text[i][j], text_rect)
         self.drawscore()            
     def drawscore(self):
+        """
+        Drawing the score
+        """
         sum = 0
         for i in range(N):
             for j in range(N):
@@ -215,52 +248,81 @@ class Grid:
         win.blit(text,(400,20))
         self.score = sum
 
+    def drawGameOver(self):
+        """
+        Drawing GameOver
+        """
+        myfont = pygame.font.SysFont('Helvetica Neue',80)
+        sfont = pygame.font.SysFont('Helvetica Neue',40)
+        text = myfont.render("Game Over",True,(255, 255, 255),(187, 173, 160))
+        stext = sfont.render("Press E to play again or Q to quit",True,(255, 255, 255),(187, 173, 160))
+        win.blit(text,((WIN_WIDTH//2)-160,(WIN_HEIGHT//2)-50))
+        win.blit(stext,((WIN_WIDTH//2)-210,(WIN_HEIGHT//2)+10))
+
     def main(self):
-        
+        """
+        Main Game
+        """
         running = True
         self.new_number(2)
 
-        redraw = True           
+        redraw = True   
+        GameOver = False       
         while running:
 
             old_grid = self.grid.copy()
-
             if redraw:
                 self.draw()
                 redraw = False
-            keys = pygame.key.get_pressed()
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif keys[pygame.K_r]:
-                    redraw = True    
-                elif keys[pygame.K_LEFT]:
+            if not GameOver:
+                
+                keys = pygame.key.get_pressed()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False   
+                    elif keys[pygame.K_LEFT]:
 
-                    self.move_number('l')
-                    self.draw()
-                elif keys[pygame.K_RIGHT]:
+                        self.move_number('l')
+                        self.draw()
+                    elif keys[pygame.K_RIGHT]:
 
-                    self.move_number('r')
-                    self.draw()
-                elif keys[pygame.K_UP]:
+                        self.move_number('r')
+                        self.draw()
+                    elif keys[pygame.K_UP]:
 
-                    self.move_number('u')
-                    self.draw()
-                elif keys[pygame.K_DOWN]:
+                        self.move_number('u')
+                        self.draw()
+                    elif keys[pygame.K_DOWN]:
 
-                    self.move_number('d')  
-                    self.draw()  
-            
-            if self.isfilled():
-                print('Game Over')    
-                break
+                        self.move_number('d')  
+                        self.draw() 
+                    
 
-            pygame.display.flip()
-            
-            if all((old_grid == self.grid).flatten()):
-                continue
-            
-            self.new_number()
+                
+                if self.isfilled():
+                    print('Game Over')    
+                    GameOver = True
+                    self.drawGameOver()
+                
+                pygame.display.flip()
+                
+                if all((old_grid == self.grid).flatten()):
+                    continue
+                
+                self.new_number()
+            else:
+                keys = pygame.key.get_pressed()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                    elif keys[pygame.K_e]:
+                        self.grid = np.zeros((N, N), dtype=int)   
+                        self.new_number(2)
+                        GameOver = False
+                        redraw = True
+                    elif keys[pygame.K_q]: 
+                        running = False 
+                      
 
                
 
